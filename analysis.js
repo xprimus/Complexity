@@ -33,10 +33,10 @@ function ComplexityBuilder()
 	// The number of parameters for functions
 	this.ParameterCount  = 0,
 	// Number of if statements/loops + 1
-	this.SimpleCyclomaticComplexity = 0;
+	this.SimpleCyclomaticComplexity = 1;
 	// The max depth of scopes (nested ifs, loops, etc)
 	this.MaxNestingDepth    = 0;
-	// The max number of conditions if one decision statement.
+	// The max number of conditions in one decision statement.
 	this.MaxConditions      = 0;
 
 	this.report = function()
@@ -96,8 +96,7 @@ function complexity(filePath)
 	var buf = fs.readFileSync(filePath, "utf8");
 	var ast = esprima.parse(buf, options);
 
-	var i = 0;
-	// Tranverse program with a function visitor.
+	var i = 0;	// Tranverse program with a function visitor.
 	traverse(ast, function (node) 
 	{
 		if (node.type === 'FunctionDeclaration') 
@@ -106,9 +105,22 @@ function complexity(filePath)
 
 			builder.FunctionName = functionName(node);
 			builder.StartLine    = node.loc.start.line;
+			builder.ParameterCount = node.params.length;
 
 			builders[builder.FunctionName] = builder;
+			var depth = 0;
+
+			traverse(node, function(child){
+				if(child.type == "IfStatement" || child.type == "ForStatement" || child.type == "ForInStatement")
+				{
+					builder.SimpleCyclomaticComplexity++;
+				}
+				depth++;
+				
+			})
 		}
+
+
 	});
 
 }
